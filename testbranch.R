@@ -1,5 +1,4 @@
-#import and data22
-#Leo test
+#import package and data
 install.packages("dplyr")
 library(readr)
 library(ggplot2)
