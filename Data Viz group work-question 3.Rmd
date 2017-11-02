@@ -1,0 +1,73 @@
+---
+
+movie <- read.csv("~/R/movie.csv")
+library(ggplot2)
+library(dplyr)
+
+movie$Overseas_rev_num <- as.numeric(movie$Overseas_rev)
+
+#Coefficient of Variation of US revenue and Overseas Revenue
+CV <- function(x){
+      (sd(x)/mean(x))*100
+      }
+      
+CV(movie$US_rev)
+CV(movie$Overseas_rev_num)
+
+#Pearson Correlation Coefficient of US vs Overseas Revenue
+cor(x = movie$US_rev, y = movie$Overseas_rev_num, method = "pearson")
+
+#Scatter: US Revenue vs Overseas Revenue
+ggplot(data = movie, aes(x = US_rev, y = Overseas_rev_num)) + 
+  geom_point(na.rm = TRUE) + geom_smooth() + xlab("US Revenue")+ylab("Oversea Revenue")
+
+
+x* = xâ€? - mean(x) / mean(x)
+y* = yâ€? - mean(y) / mean(y)
+
+mean(movie$US_rev)
+movie$US <- (movie$US_rev - mean(movie$US_rev))/mean(movie$US_rev)
+movie$Oversea <- (movie$Overseas_rev_num - mean(movie$Overseas_rev_num))/mean(movie$Overseas_rev_num)
+cor(x = movie_US, y = movie_Oversea, method = "pearson")
+
+ggplot(data = movie, aes(x = US, y = Oversea)) + 
+  geom_point(na.rm = TRUE) + geom_smooth()
+ 
+
+#Scatter plot: US Revenue vs US_rev/Overseas_rev
+us_oversea_per <- movie$US_rev / movie$Overseas_rev_num
+ggplot(data = movie, aes(x = US_rev, y = us_oversea_per)) + 
+  geom_point(na.rm = TRUE) + geom_smooth() + xlab("US Revenue") + ylab("US Revenue/Oversea Revenue")
+
+##group by genre
+Gen <- movie %>% group_by(Genre)
+Gen_AvgUSRev <- Gen %>% summarise(average_us_rev = mean(US_rev))
+Gen_AvgOVRev <- Gen %>% summarise(average_ov_rev = mean(Overseas_rev_num))
+
+ggplot(data = Gen_AvgUSRev, aes(x = average_us_rev, y = Gen_AvgOVRev$average_ov_rev))+
+  geom_point() + aes(color = Genre) + xlab("Average US Revenue") + ylab("Average Overseas Revenue")
+
+Perc_US_Overseas <- Gen_AvgUSRev$average_us_rev / Gen_AvgOVRev$average_ov_rev
+
+
+
+
+
+
+
+
+
+```
+
+## a strategy for Netflixâ€™s next investment in a movie
+Rating
+Runtime
+location - US/Oversea
+
+we can do more in:
+day of the week
+genre
+director
+studio
+
+
