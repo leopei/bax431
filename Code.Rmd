@@ -114,7 +114,7 @@ ggplot(data = movie, aes(x = IMDb_Rating_fac, y = Adjusted_Gross_num)) +
 
 ```
 
-##correlation over time
+## Correlation over time
 revenue
 ```{r}
 corr_rev <- c()
@@ -141,7 +141,7 @@ ggplot(data = df, aes(x= yearr)) +
 
 ```
 
-Long movie or short movie?
+## Load Data & Data Cleaning
 ```{r}
 q2<-sqldf("select genre, long, avg(profit) as Profit, avg(adj_rev) as Revenue, avg(o_rev) as Overseas_Revenue, avg(d_rev) as Domestic_Rev, avg(budget) from mv group by 1,2  ")
 
