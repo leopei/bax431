@@ -141,7 +141,7 @@ ggplot(data = df, aes(x= yearr)) +
 
 ```
 
-##Long movie or short movie?
+Long movie or short movie?
 ```{r}
 q2<-sqldf("select genre, long, avg(profit) as Profit, avg(adj_rev) as Revenue, avg(o_rev) as Overseas_Revenue, avg(d_rev) as Domestic_Rev, avg(budget) from mv group by 1,2  ")
 
