@@ -1,0 +1,177 @@
+---
+title: "BAX411 Group Assignment"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Data & Data Cleaning
+```{r}
+movie <- read.csv("movie3.csv")
+
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+
+movie$Adjusted_Gross_num <- as.numeric(gsub(',','', as.character(movie$Adjusted_Gross)))
+```
+
+## Distribution 
+```{r}
+hist(movie$IMDb_Rating) 
+hist(movie$Adjusted_Gross_num)
+hist(log10(movie$Adjusted_Gross_num))
+hist(movie$Profit)
+
+ggplot(data = movie, aes(x = IMDb_Rating)) +
+  geom_histogram(fill = "lightyellow", color = "Black") +
+  xlab("IMDb Rating") +
+  ylab("Number of Movies") +
+  ggtitle("Distribution of IMDb Ratings")
+
+ggplot(data = movie, aes(x = Adjusted_Gross_num)) +
+  geom_histogram(fill = "lightyellow", color = "Black") +
+  xlab("Adjusted Gross Revenue") +
+  ylab("Number of Movies") +
+  ggtitle("Distribution of Adjusted Gross Revenue")
+
+ggplot(data = movie, aes(x = log10(Adjusted_Gross_num))) +
+  geom_histogram(fill = "lightyellow", color = "Black") +
+  xlab("Log10 for Adjusted Gross Revenue") +
+  ylab("Number of Movies") +
+  ggtitle("Distribution of Log10 for Adjusted Gross Revenue")
+```
+
+## Correlation Coefficient
+0.2720711 is very low
+```{r}
+cor(x = movie$IMDb_Rating, y = movie$Adjusted_Gross_num, method = "pearson")
+```
+
+0.3026204 is also very low
+```{r}
+cor(x = movie$IMDb_Rating, y = movie$Profit, method = "pearson")
+```
+
+## Scatter Plot
+shows weak positive correlation, revenue seems better 
+exclude extreme outliers
+```{r}
+IQR <- IQR(movie$Adjusted_Gross_num)
+Q3 <- quantile(movie$Adjusted_Gross_num, 0.75)
+Q1 <- quantile(movie$Adjusted_Gross_num, 0.25)
+extrameoutlier_u <- Q3 + 3*IQR
+extrameoutlier_l <- Q1 - 3*IQR
+
+movie_no <- subset(movie, Adjusted_Gross_num < extrameoutlier_u & Adjusted_Gross_num > extrameoutlier_l)
+```
+
+log2 is better in showing positive correlation
+```{r}
+ggplot(data = movie, aes(x = IMDb_Rating, y = Adjusted_Gross_num)) +
+  geom_point() + geom_smooth() + ylim(0, 4000)
+
+
+ggplot(data = movie_no, aes(x = IMDb_Rating, y = Adjusted_Gross_num)) +
+  geom_point() + geom_smooth() +
+  xlab("IMDb Rating") +
+  ylab("Adjusted Gross Revenue") +
+  ggtitle("Scatter Plot of IMDb Rating vs Adjusted Gross Revenue")
+
+ #log2
+ggplot(data = movie_no, aes(x = IMDb_Rating, y = log2(Adjusted_Gross_num))) +
+  geom_point() + geom_smooth() +
+  xlab("IMDb Rating") +
+  ylab("Log2 of Adjusted Gross Revenue") +
+  ggtitle("Scatter Plot of IMDb Rating vs Log2 of Adjusted Gross Revenue")
+```
+
+
+## Make rating integer, see the trend of profit & revenue
+revenue
+```{r}
+movie$IMDb_Rating_int <- round(movie$IMDb_Rating)
+movie$IMDb_Rating_fac <- as.character(movie$IMDb_Rating_int)
+IQR <- IQR(movie$Adjusted_Gross_num)
+Q3 <- quantile(movie$Adjusted_Gross_num, 0.75)
+Q1 <- quantile(movie$Adjusted_Gross_num, 0.25)
+extrameoutlier_u <- Q3 + 3*IQR
+extrameoutlier_l <- Q1 - 3*IQR
+min1 <- min(movie$Adjusted_Gross_num)
+
+#install.packages("ggplot2")
+#library(ggplot2)
+ggplot(data = movie, aes(x = IMDb_Rating_fac, y = Adjusted_Gross_num)) +
+  ylim(min1, extrameoutlier_u) +
+  geom_boxplot(fill = "lightyellow", color = "black") +
+  geom_smooth(method = "loess", se = FALSE, color = "black", aes(group=1)) +
+  theme_gray() +
+  ylab("Adjusted_Gross_Revenue") +
+  xlab("IMDb_Rating") +
+  ggtitle("IMDb_Rating vs Adjusted_Gross_Revenue ")
+
+```
+
+##correlation over time
+revenue
+```{r}
+corr_rev <- c()
+for (i in 1990:2015) {
+b <- with(subset(movie, year == i), cor(x = IMDb_Rating, y = Adjusted_Gross_num, method = "pearson"))
+corr_rev <- c(corr_rev, b)
+}
+corr_rev
+
+yearr <- c(1990:2015)
+yearr
+
+corr_time <- c(yearr, corr_rev)
+df<-data.frame(yearr, corr_rev)
+df
+
+
+ggplot(data = df, aes(x= yearr)) +
+  geom_line(aes(y = corr_rev), color = "blue") +
+#  geom_line(aes(y = corr_prof), color = "green") +
+  ylab("Correlation Coefficient") +
+  xlab("Year") +
+  ggtitle("Correlation Coefficients of IMDb Rating & Revenue over Time")
+
+```
+
+##Long movie or short movie?
+```{r}
+q2<-sqldf("select genre, long, avg(profit) as Profit, avg(adj_rev) as Revenue, avg(o_rev) as Overseas_Revenue, avg(d_rev) as Domestic_Rev, avg(budget) from mv group by 1,2  ")
+
+q2_short<- sqldf("select genre, rev as s_rev, profit as s_profit from q2 where long =0")
+q2_long<- sqldf("select genre, rev as l_rev, profit as l_profit from q2 where long =1")
+
+q2_rev<- sqldf("select a.genre, b.s_rev, a.l_rev from q2_long as a left join q2_short as b on a.genre=b.genre")
+q2_rev[is.na(q2_rev)]<-0
+q2_profit<- sqldf("select a.genre, b.s_profit, a.l_profit from q2_long as a left join q2_short as b on a.genre=b.genre")
+q2_profit[is.na(q2_profit)]<-0
+
+ggplot(data = q2, aes(x = long, y = Genre)) +
+  geom_tile(aes(fill = Profit),color = "white") +
+  scale_fill_gradient(low = "white", high = "black") + xlab("Short                                         Long") +
+  ylab("Genre") 
+
+ggplot(data = q2, aes(x = long, y = Genre)) +
+  geom_tile(aes(fill = Revenue),color = "white") +
+  scale_fill_gradient(low = "white", high = "black") + xlab("Short                                         Long") +
+  ylab("Genre") 
+
+ggplot(data = q2, aes(x = long, y = Genre)) +
+  geom_tile(aes(fill = Overseas_Revenue),color = "white") +
+  scale_fill_gradient(low = "white", high = "black") + xlab("Short                                         Long") +
+  ylab("Genre")
+
+ggplot(data = q2, aes(x = long, y = Genre)) +
+  geom_tile(aes(fill = Domestic_Rev),color = "white") +
+  scale_fill_gradient(low = "white", high = "black") + xlab("Short                                         Long") +
+  ylab("Genre")
+```
+
+
